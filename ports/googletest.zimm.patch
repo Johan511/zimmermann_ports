@@ -1,0 +1,103 @@
+diff --git a/googlemock/ze_build.hpp b/googlemock/ze_build.hpp
+new file mode 100644
+index 00000000..3bc0f848
+--- /dev/null
++++ b/googlemock/ze_build.hpp
+@@ -0,0 +1,25 @@
++#pragma once
++
++#include "zimm/zimm.hpp"
++
++using namespace zimm;
++
++struct GMockTargets {
++  LeakyPtr<StaticLibrary> gmock;
++  LeakyPtr<StaticLibrary> gmock_main;
++};
++
++inline GMockTargets define_gmock(StaticLibrary* gtest) {
++  auto gmock = make_static_library("gmock");
++  gmock->add_source(rel_path("src/gmock-all.cc"));
++  gmock->add_property(public_, IncludeProperty{rel_path("include")});
++  gmock->add_property(private_, IncludeProperty{rel_path("")});
++  gmock->link_with(public_, gtest);
++
++  auto gmock_main = make_static_library("gmock_main");
++  gmock_main->add_source(rel_path("src/gmock_main.cc"));
++  gmock_main->add_property(public_, IncludeProperty{rel_path("include")});
++  gmock_main->link_with(public_, gmock.get());
++
++  return {std::move(gmock), std::move(gmock_main)};
++}
+diff --git a/googletest/ze_build.hpp b/googletest/ze_build.hpp
+new file mode 100644
+index 00000000..1ad99e9b
+--- /dev/null
++++ b/googletest/ze_build.hpp
+@@ -0,0 +1,24 @@
++#pragma once
++
++#include "zimm/zimm.hpp"
++
++using namespace zimm;
++
++struct GTestTargets {
++  LeakyPtr<StaticLibrary> gtest;
++  LeakyPtr<StaticLibrary> gtest_main;
++};
++
++inline GTestTargets define_gtest() {
++  auto gtest = make_static_library("gtest");
++  gtest->add_source(rel_path("src/gtest-all.cc"));
++  gtest->add_property(public_, IncludeProperty{rel_path("include")});
++  gtest->add_property(private_, IncludeProperty{rel_path("")});
++
++  auto gtest_main = make_static_library("gtest_main");
++  gtest_main->add_source(rel_path("src/gtest_main.cc"));
++  gtest_main->add_property(public_, IncludeProperty{rel_path("include")});
++  gtest_main->link_with(public_, gtest.get());
++
++  return {std::move(gtest), std::move(gtest_main)};
++}
+diff --git a/ze_build.cpp b/ze_build.cpp
+new file mode 100644
+index 00000000..2f80c755
+--- /dev/null
++++ b/ze_build.cpp
+@@ -0,0 +1,36 @@
++#include "googletest/ze_build.hpp"
++
++#include <print>
++#include "googlemock/ze_build.hpp"
++
++using namespace zimm;
++
++int main(int argc, char* argv[]) {
++  auto cfg = make_config(argc, argv);
++  Project prj{"googletest-distribution", std::move(cfg.value())};
++
++  prj.add_global_property(CompileFlagProperty{"-std=c++17"});
++
++  auto gtest_tgts = define_gtest();
++  prj.register_top_level_target(gtest_tgts.gtest_main.get());
++
++  auto gmock_tgts = define_gmock(gtest_tgts.gtest.get());
++  prj.register_top_level_target(gmock_tgts.gmock_main.get());
++
++  prj.installer()->install_lib(gtest_tgts.gtest.get());
++  prj.installer()->install_lib(gtest_tgts.gtest_main.get());
++  prj.installer()->install_lib(gmock_tgts.gmock.get());
++  prj.installer()->install_lib(gmock_tgts.gmock_main.get());
++  prj.installer()->install_headers(Directory{rel_path("googletest/include")});
++  prj.installer()->install_headers(Directory{rel_path("googlemock/include")});
++
++  // TODO: gtest_build_tests / gmock_build_tests — requires test runner
++  // TODO: GTEST_HAS_ABSL — requires external Abseil/RE2 discovery
++  // TODO: gtest_hide_internal_symbols — requires symbol visibility control
++  // TODO: config_compiler_and_linker — requires per-build-type warning flags
++  // TODO: hermetic_build — requires hermetic toolchain isolation
++  // TODO: gtest_force_shared_crt — Windows-only, requires CMake-level CRT
++  // control
++
++  generate_build(prj);
++}

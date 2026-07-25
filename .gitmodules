@@ -1,0 +1,3 @@
+[submodule "ports/googletest"]
+	path = ports/googletest
+	url = https://github.com/google/googletest

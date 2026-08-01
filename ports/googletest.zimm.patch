@@ -84,12 +84,12 @@ index 00000000..2f80c755
 +  auto gmock_tgts = define_gmock(gtest_tgts.gtest.get());
 +  prj.register_top_level_target(gmock_tgts.gmock_main.get());
 +
-+  prj.installer()->install_lib(gtest_tgts.gtest.get());
-+  prj.installer()->install_lib(gtest_tgts.gtest_main.get());
-+  prj.installer()->install_lib(gmock_tgts.gmock.get());
-+  prj.installer()->install_lib(gmock_tgts.gmock_main.get());
-+  prj.installer()->install_headers(Directory{rel_path("googletest/include")});
-+  prj.installer()->install_headers(Directory{rel_path("googlemock/include")});
++  prj.installer().install_lib(gtest_tgts.gtest.get());
++  prj.installer().install_lib(gtest_tgts.gtest_main.get());
++  prj.installer().install_lib(gmock_tgts.gmock.get());
++  prj.installer().install_lib(gmock_tgts.gmock_main.get());
++  prj.installer().install_headers(Directory{rel_path("googletest/include")});
++  prj.installer().install_headers(Directory{rel_path("googlemock/include")});
 +
 +  // TODO: gtest_build_tests / gmock_build_tests — requires test runner
 +  // TODO: GTEST_HAS_ABSL — requires external Abseil/RE2 discovery
